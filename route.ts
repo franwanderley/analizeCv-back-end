@@ -46,7 +46,7 @@ export const routes = async (server: fastifyTypeInstance) => {
           model: "gemini-2.5-flash",
           contents
         });
-        return reply.status(200).send(response);
+        return reply.status(200).send(response.text);
       } catch (error) {
         console.log(error);
         return reply.code(500).send({ error: "Erro ao analisar o curriculo" });
