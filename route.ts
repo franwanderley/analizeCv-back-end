@@ -37,13 +37,15 @@ export const routes = async (server: fastifyTypeInstance) => {
           1. Pontos Fortes: O que foi bem feito e deve ser mantido.
           2. Pontos a Melhorar: O que pode ser aprimorado para deixar o currículo mais forte.
           3. Sugestões de Formatação: Dicas sobre a estrutura, clareza e layout.
+          obs: seja sucinto e direto, evite repetições e mantenha o feedback claro e objetivo.
+          obs2: Adicione espaços entre as seções e não use linhas.
           O currículo a ser analisado é este:
           """
           ${curriculumText}
           """
         `;
         const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-2.5-pro",
           contents
         });
         return reply.status(200).send(response.text);
