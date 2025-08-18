@@ -23,7 +23,7 @@ export const routes = async (server: fastifyTypeInstance) => {
 
   server.route({
     method: "POST",
-    url: "/",
+    url: "/analize-curriculum",
     handler: async (request, reply) => {
       const data = await request.file();
       if (!data) {
