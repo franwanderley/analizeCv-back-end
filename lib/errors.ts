@@ -8,16 +8,20 @@ export class AppError extends Error {
   }
 }
 
-// For client-side errors (e.g., bad request)
 export class BadRequestError extends AppError {
   constructor(message = "Bad Request") {
     super(message, 400);
   }
 }
 
-// For errors during PDF parsing
 export class PdfParseError extends AppError {
   constructor(message = "Failed to parse PDF file.") {
     super(message, 500);
+  }
+}
+
+export class IAServiceError extends AppError {
+  constructor(message = "Failed to communicate with the AI service.") {
+    super(message, 502);
   }
 }

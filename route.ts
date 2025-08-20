@@ -2,7 +2,7 @@ import { FastifyPluginAsync } from "fastify";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { pdfToText } from "./functions";
 import { createCvAnalysisPrompt } from "./lib/prompt";
-import { BadRequestError } from "./lib/errors";
+import { BadRequestError, IAServiceError } from "./lib/errors";
 
 export const routes: FastifyPluginAsync = async (server) => {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -11,7 +11,6 @@ export const routes: FastifyPluginAsync = async (server) => {
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
   server.post("/analize-curriculum", async (request, reply) => {
@@ -22,12 +21,15 @@ export const routes: FastifyPluginAsync = async (server) => {
     }
 
     const curriculumText = await pdfToText(data);
-
     const prompt = createCvAnalysisPrompt(curriculumText);
 
-    const result = await model.generateContent(prompt);
-    const analysis = result.response.text();
+    try {
+      const result = await model.generateContent(prompt);
+      return reply.status(200).send(result.response.text());      
+    } catch (error) {
+      console.error("Error generating content:", error);
+      throw new IAServiceError("Não foi possível processar a solicitação.");
+    }
 
-    return reply.status(200).send(analysis);
   });
 };
