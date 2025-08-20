@@ -75,7 +75,7 @@ Envie uma requisição POST com o cabeçalho Content-Type: multipart/form-data e
 
 Exemplo de uso com curl:
 ``` curl
-   curl -X POST -F "file=@/caminho/do/seu/curriculo.pdf" http://localhost:3000/analisar-curriculo
+   curl -X POST -F "file=@/caminho/do/seu/curriculo.pdf" http://localhost:3333/analize-curriculum
 ```
 Substitua /caminho/do/seu/curriculo.pdf pelo caminho real do seu arquivo PDF.
 

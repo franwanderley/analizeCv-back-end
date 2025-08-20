@@ -1,58 +1,33 @@
-import {
-  FastifyBaseLogger,
-  FastifyInstance,
-  RawReplyDefaultExpression,
-  RawRequestDefaultExpression,
-  RawServerDefault,
-} from "fastify";
-import PdfParse from "pdf-parse";
-import { GoogleGenAI } from "@google/genai";
+import { FastifyPluginAsync } from "fastify";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { pdfToText } from "./functions";
+import { createCvAnalysisPrompt } from "./lib/prompt";
+import { BadRequestError } from "./lib/errors";
 
-type fastifyTypeInstance = FastifyInstance<
-  RawServerDefault,
-  RawRequestDefaultExpression,
-  RawReplyDefaultExpression,
-  FastifyBaseLogger
->;
+export const routes: FastifyPluginAsync = async (server) => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables.");
+  }
 
-export const routes = async (server: fastifyTypeInstance) => {
-  const ai = new GoogleGenAI({
-    apiKey: process.env.GOOGLE_API_KEY,
-  });
+  const genAI = new GoogleGenerativeAI(apiKey);
 
-  server.route({
-    method: "POST",
-    url: "/analize-curriculum",
-    handler: async (request, reply) => {
-      const data = await request.file();
-      if (!data) {
-        return reply.code(400).send({ error: "Nenhum arquivo enviado." });
-      }
-      try {
-        const curriculumText = await pdfToText(data);
-        const contents = `
-          Você é um especialista em recrutamento e análise de currículos. Analise o currículo a seguir e forneça um feedback construtivo.
-          As dicas devem ser divididas em seções:
-          1. Pontos Fortes: O que foi bem feito e deve ser mantido.
-          2. Pontos a Melhorar: O que pode ser aprimorado para deixar o currículo mais forte.
-          3. Sugestões de Formatação: Dicas sobre a estrutura, clareza e layout.
-          obs: seja sucinto e direto, evite repetições e mantenha o feedback claro e objetivo.
-          obs2: Adicione espaços entre as seções e não use linhas.
-          O currículo a ser analisado é este:
-          """
-          ${curriculumText}
-          """
-        `;
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-pro",
-          contents
-        });
-        return reply.status(200).send(response.text);
-      } catch (error) {
-        console.log(error);
-        return reply.code(500).send({ error: "Erro ao analisar o curriculo" });
-      }
-    },
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+  server.post("/analize-curriculum", async (request, reply) => {
+    const data = await request.file();
+
+    if (!data) {
+      throw new BadRequestError("Nenhum arquivo enviado. Por favor, envie um PDF.");
+    }
+
+    const curriculumText = await pdfToText(data);
+
+    const prompt = createCvAnalysisPrompt(curriculumText);
+
+    const result = await model.generateContent(prompt);
+    const analysis = result.response.text();
+
+    return reply.status(200).send(analysis);
   });
 };
